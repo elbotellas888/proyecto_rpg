@@ -189,7 +189,7 @@ def draw_hud(screen, player):
 
 
 
-background_image = load_image("experimento_grande.png")
+background_image = load_image("../texturas/experimento_grande.png")
 background_rect = background_image.get_rect() if background_image else None
 
 # Crea una superficie para la sombra
