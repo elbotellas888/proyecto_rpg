@@ -1,9 +1,6 @@
 #penultima prueba
 import pygame
 import random
-import math
-import time
-import csv
 # Definimos la ruta al directorio actual
 path = "C:/Users/martinjr44/Desktop/"
 
@@ -23,13 +20,17 @@ def load_image(path):
         print(f"Error al cargar la imagen {path}: {e}")
         return None
 
-
+player_width = 50
+player_height = 50
+player_x = 50
+player_y = 50
 # Clase para el Jugador
 class Player:
     def __init__(self):
         # Carga las imágenes del jugador (animación)
         self.name = "master"
         self.player_speed= 0.3
+        player = pygame.Rect(player_x, player_y, player_width, player_height)
         self.images = {
             "idle": [
                 load_image("normal.png"),
@@ -182,7 +183,6 @@ def draw_hud(screen, player):
     screen.blit(level_text, (10, 100))
     screen.blit(experience_text, (10, 130))
 
-# colisionar con las paredes
 
 
 
@@ -209,68 +209,99 @@ camera_x = 0
 camera_y = 0
 camera_speed = 5  
 
+
+# Lista de rectángulos
+rects = [
+    pygame.Rect(220, 10, 1400, 200),
+    pygame.Rect(50, 1, 120, 80),
+    pygame.Rect(10, 50, 20, 2000),
+    pygame.Rect(50, 700, 500, 650),
+    pygame.Rect(400, 1780, 950, 230),
+    pygame.Rect(1260, 700, 1000, 400),
+    pygame.Rect(1590, 200, 700, 250),
+    pygame.Rect(10, 2000, 2300, 30),
+    pygame.Rect(2300, 200, 50, 2000),
+    pygame.Rect(950, 860, 50, 85)
+]
+
 running = True
 while running:
-    # Gestiona los eventos del juego
+    screen.fill((0, 0, 0))  # Limpiar la pantalla
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-    
+
+
     # Obtén las teclas presionadas
     keys = pygame.key.get_pressed()
 
-    
-
-
-    # Actualización del jugador
-    if keys[pygame.K_RIGHT]:
-        player.rect.x += 5
-        player.state = "walk_right"
-    elif keys[pygame.K_LEFT]:
+    # Movimiento del jugador
+    if keys[pygame.K_LEFT]:
         player.rect.x -= 5
         player.state = "walk_left"
+        if any(player.rect.colliderect(rect) for rect in rects):
+            player.rect.x += 5
+            player.state = "idle"
+
+    elif keys[pygame.K_RIGHT]:
+        player.rect.x += 5
+        player.state = "walk_right"
+        if any(player.rect.colliderect(rect) for rect in rects):
+            player.rect.x -= 5
+            player.state = "idle"
+
     elif keys[pygame.K_UP]:
         player.rect.y -= 5
         player.state = "walk_up"
+        if any(player.rect.colliderect(rect) for rect in rects):
+            player.rect.y += 5
+            player.state = "idle"
+
     elif keys[pygame.K_DOWN]:
         player.rect.y += 5
         player.state = "walk_down"
+        if any(player.rect.colliderect(rect) for rect in rects):
+            player.rect.y -= 5
+            player.state = "idle"
+
     elif keys[pygame.K_SPACE]:  # Atacar
         player.state = "attack_animacion"  # Atacar cuando presionas la barra espaciadora
-        # Solo atacar si está cerca de un enemigo
-        
+
     else:
-        player.state = "idle"
+        player.state = "idle"  # Si no se presionan teclas
 
-
-# Bucle principal del juego
     # Actualiza la animación del jugador
     player.update()
 
     # Variables de la cámara
-    # La cámara sigue al jugador, pero se limita a no salirse de los bordes del mapa
     camera_x = player.rect.centerx - screen_width // 2
     camera_y = player.rect.centery - screen_height // 2
 
-    # Limita el movimiento de la cámara para que no salga del mapa
+    # Limita el movimiento de la cámara
     camera_x = max(0, min(camera_x, map_width - screen_width))
     camera_y = max(0, min(camera_y, map_height - screen_height))
 
     # Dibuja el fondo
     if background_image:
-        screen.blit(background_image, (-camera_x, -camera_y))  # Desplaza el fondo
+        screen.blit(background_image, (-camera_x, -camera_y))
 
     # Dibuja la sombra
     screen.blit(shadow_surface, (0, 0))
 
+    # Dibujar los rectángulos
+    for rect in rects:
+    # Ajustar las posiciones de los rectángulos al aplicar el desplazamiento de la cámara
+        rect_screen_x = rect.x - camera_x
+        rect_screen_y = rect.y - camera_y
+        #pygame.draw.rect(screen, (255, 0, 0), (rect_screen_x, rect_screen_y, rect.width, rect.height))
+
+
     # Dibujar al jugador
     player.draw(screen, camera_x, camera_y)
 
-        # Dibujar el HUD
+    # Dibujar el HUD
     draw_hud(screen, player)
 
-    pygame.display.flip()
+    pygame.display.update()
     clock.tick(60)  # 60 FPS
-
-# Ejecutar el juego
-pygame.quit()

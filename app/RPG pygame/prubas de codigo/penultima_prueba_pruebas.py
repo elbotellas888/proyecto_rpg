@@ -1,9 +1,6 @@
 #penultima prueba
 import pygame
 import random
-import math
-import time
-import csv
 # Definimos la ruta al directorio actual
 path = "C:/Users/martinjr44/Desktop/"
 
@@ -189,7 +186,7 @@ def draw_hud(screen, player):
 
 
 
-background_image = load_image("../texturas/experimento_grande.png")
+background_image = load_image("experimento_grande.png")
 background_rect = background_image.get_rect() if background_image else None
 
 # Crea una superficie para la sombra
@@ -215,14 +212,17 @@ camera_speed = 5
 
 # Lista de rectángulos
 rects = [
-    pygame.Rect(100, 50, 800, 200),
-    pygame.Rect(400, 300, 120, 120),
-    pygame.Rect(100, 400, 150, 80),
+    pygame.Rect(220, 10, 1400, 200),
+    pygame.Rect(50, 1, 120, 80),
+    pygame.Rect(10, 50, 20, 2000),
+    pygame.Rect(50, 700, 500, 650),
+    pygame.Rect(400, 1780, 950, 230),
+    pygame.Rect(1260, 700, 1000, 400),
+    pygame.Rect(1590, 200, 700, 250),
+    pygame.Rect(10, 2000, 2300, 30),
+    pygame.Rect(2300, 200, 50, 2000),
+    pygame.Rect(950, 860, 50, 85)
 ]
-
-
-
-dragging_rect = None  # Rectángulo que se está arrastrando
 
 running = True
 while running:
@@ -232,18 +232,6 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-        # Movimiento de los rectángulos con el ratón
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            mouse_x, mouse_y = pygame.mouse.get_pos()
-            for rect in rects:
-                if rect.collidepoint(mouse_x, mouse_y):
-                    dragging_rect = rect
-                    break
-        elif event.type == pygame.MOUSEBUTTONUP:
-            dragging_rect = None
-        elif event.type == pygame.MOUSEMOTION and dragging_rect:
-            dragging_rect.x += event.rel[0]
-            dragging_rect.y += event.rel[1]
 
     # Obtén las teclas presionadas
     keys = pygame.key.get_pressed()
@@ -277,6 +265,9 @@ while running:
             player.rect.y -= 5
             player.state = "idle"
 
+    elif keys[pygame.K_SPACE]:  # Atacar
+        player.state = "attack_animacion"  # Atacar cuando presionas la barra espaciadora
+
     else:
         player.state = "idle"  # Si no se presionan teclas
 
@@ -300,7 +291,11 @@ while running:
 
     # Dibujar los rectángulos
     for rect in rects:
-        pygame.draw.rect(screen, (255, 0, 0), rect)
+    # Ajustar las posiciones de los rectángulos al aplicar el desplazamiento de la cámara
+        rect_screen_x = rect.x - camera_x
+        rect_screen_y = rect.y - camera_y
+        #pygame.draw.rect(screen, (255, 0, 0), (rect_screen_x, rect_screen_y, rect.width, rect.height))
+
 
     # Dibujar al jugador
     player.draw(screen, camera_x, camera_y)
