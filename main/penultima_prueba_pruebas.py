@@ -1,8 +1,6 @@
 #penultima prueba
 import pygame
 import random
-import math
-import time
 # Definimos la ruta al directorio actual
 path = "C:/Users/martinjr44/Desktop/"
 
