@@ -1,6 +1,7 @@
 #penultima prueba
 import pygame
 import random
+import math
 # Definimos la ruta al directorio actual
 path = "C:/Users/martinjr44/Desktop/"
 
@@ -154,10 +155,12 @@ class Player:
         if self.attack_timer <= 00.5:  
             damage = random.randint(self.attack - 2, self.attack + 2)
             print(f"{self.name} ataca a {enemy.name} con {damage} de daño.")
-            self.attack_timer = self.attack_cooldown  # Reinicia el temporizador de ataque
+            self.attack_timer = max(0, self.attack_timer - 0.05)  # Reducir el temporizador gradualmente
             self.state = "attack_animacion"  # Activar la animación de ataque
             return enemy.receive_damage(damage)
         return False
+
+
 
     def level_up(self):
         if self.experience >= 100 * self.level:
@@ -168,6 +171,58 @@ class Player:
             self.experience = 0
             print(f"¡Nivel {self.level} alcanzado! Salud: {self.health}, Ataque: {self.attack}, Defensa: {self.defense}")
 
+class Enemy:
+    def __init__(self, name, health, attack, defense, sprite_path):
+        self.name = name
+        self.health = health
+        self.attack = attack
+        self.defense = defense
+        self.sprite = pygame.image.load(sprite_path).convert_alpha()
+        self.sprite = pygame.transform.scale(self.sprite, (128, 128))  # Tamaño del sprite
+
+        self.rect = self.sprite.get_rect()
+        self.rect.x = random.randint(100, screen_width - 100)
+        self.rect.y = random.randint(100, screen_height - 100)
+
+        self.attack_timer = 0
+        self.attack_cooldown = 1  # Enfriamiento entre ataques
+
+    def receive_damage(self, damage):
+        damage_taken = max(0, damage - self.defense)
+        self.health -= damage_taken
+        print(f"{self.name} recibe {damage_taken} de daño. Salud restante: {self.health}")
+        if self.health <= 0:
+            print(f"{self.name} ha sido derrotado.")
+            return False  # El enemigo ha muerto
+        return True
+
+    def attack_player(self, player):
+        if self.attack_timer <= 0:  # Solo ataca si el tiempo de enfriamiento ha pasado
+            damage = random.randint(self.attack - 2, self.attack + 2)
+            print(f"{self.name} ataca a {player.name} con {damage} de daño.")
+            self.attack_timer = self.attack_cooldown
+
+    def move_towards_player(self, player, vision_range=300):
+        # Calcular la distancia entre el enemigo y el jugador
+        dx = player.rect.x - self.rect.x
+        dy = player.rect.y - self.rect.y
+        distance = math.sqrt(dx**2 + dy**2)
+
+        # Verificar si el jugador está dentro del rango de visión del enemigo
+        if distance <= vision_range:  # Solo sigue al jugador si está dentro del rango de visión
+            if distance != 0:  # Evitar la división por cero
+            # Normalizar el vector de movimiento para evitar movimientos bruscos
+                dx, dy = dx / distance, dy / distance  # Normaliza el vector
+                self.rect.x += dx * 2  # Ajuste de velocidad, puede ser 2 o cualquier valor deseado
+                self.rect.y += dy * 2  # Ajuste de velocidad, puede ser 2 o cualquier valor deseado
+
+            # Actualiza el temporizador de ataque (opcional)
+                self.attack_timer = self.attack_cooldown
+
+
+
+
+            
 # Función para dibujar el HUD
 def draw_hud(screen, player):
     font = pygame.font.SysFont("Arial", 20)
@@ -224,6 +279,23 @@ rects = [
     pygame.Rect(950, 860, 50, 85)
 ]
 
+# Crea instancias de enemigos
+enemies = [
+    Enemy("fantasma rojo", health=100, attack=6, defense=2, sprite_path="fantasma de sangre.gif"),
+    Enemy("fantasma flanco", health=100, attack=7, defense=5, sprite_path="fantasmita_enemigo.png"),
+    Enemy("fantasma rojo", health=100, attack=6, defense=2, sprite_path="fantasma de sangre.gif"),
+    Enemy("fantasma flanco", health=100, attack=7, defense=5, sprite_path="fantasmita_enemigo.png"),
+    Enemy("fantasma rojo", health=100, attack=6, defense=2, sprite_path="fantasma de sangre.gif"),
+    Enemy("fantasma flanco", health=100, attack=7, defense=5, sprite_path="fantasmita_enemigo.png"),
+    Enemy("fantasma rojo", health=100, attack=6, defense=2, sprite_path="fantasma de sangre.gif"),
+    Enemy("fantasma flanco", health=100, attack=7, defense=5, sprite_path="fantasmita_enemigo.png"),
+    Enemy("fantasma rojo", health=100, attack=6, defense=2, sprite_path="fantasma de sangre.gif"),
+    Enemy("fantasma flanco", health=100, attack=7, defense=5, sprite_path="fantasmita_enemigo.png"),
+]
+
+
+
+
 running = True
 while running:
     screen.fill((0, 0, 0))  # Limpiar la pantalla
@@ -231,7 +303,6 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-
 
     # Obtén las teclas presionadas
     keys = pygame.key.get_pressed()
@@ -267,12 +338,30 @@ while running:
 
     elif keys[pygame.K_SPACE]:  # Atacar
         player.state = "attack_animacion"  # Atacar cuando presionas la barra espaciadora
+        # Detectar enemigos en rango de ataque
+        for enemy in enemies:
+            if player.rect.colliderect(enemy.rect):
+                player.attack_enemy(enemy)
 
     else:
         player.state = "idle"  # Si no se presionan teclas
+    # Movimiento y ataque de enemigos
+    for enemy in enemies:
+    # Mover al enemigo solo si el jugador está dentro de su rango de visión
+        enemy.move_towards_player(player, vision_range=300)  # Puedes cambiar 300 por cualquier valor deseado
+
+        # Si el enemigo está lo suficientemente cerca, ataca al jugador
+    if enemy.rect.colliderect(player.rect):
+            if not player.receive_damage(enemy.attack):
+                print(f"{player.name} ha muerto.")
+                running = False  # Termina el juego si el jugador muere
 
     # Actualiza la animación del jugador
     player.update()
+
+    # Dibuja a los enemigos
+    for enemy in enemies:
+        screen.blit(enemy.sprite, enemy.rect)
 
     # Variables de la cámara
     camera_x = player.rect.centerx - screen_width // 2
@@ -289,9 +378,8 @@ while running:
     # Dibuja la sombra
     screen.blit(shadow_surface, (0, 0))
 
-    # Dibujar los rectángulos
+    # Dibujar los rectángulos (colisiones o obstáculos)
     for rect in rects:
-    # Ajustar las posiciones de los rectángulos al aplicar el desplazamiento de la cámara
         rect_screen_x = rect.x - camera_x
         rect_screen_y = rect.y - camera_y
         #pygame.draw.rect(screen, (255, 0, 0), (rect_screen_x, rect_screen_y, rect.width, rect.height))
@@ -299,9 +387,12 @@ while running:
 
     # Dibujar al jugador
     player.draw(screen, camera_x, camera_y)
-
+    # Dibuja a los enemigos
+    for enemy in enemies:
+        screen.blit(enemy.sprite, (enemy.rect.x - camera_x, enemy.rect.y - camera_y))
     # Dibujar el HUD
     draw_hud(screen, player)
 
     pygame.display.update()
     clock.tick(60)  # 60 FPS
+   
